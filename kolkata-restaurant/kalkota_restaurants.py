@@ -118,11 +118,12 @@ def init_status():
 
     # on localise tous les murs
     wallStates = [w.get_rowcol() for w in game.layers['obstacle']]
+    print("Wall states:",wallStates)
 
     # on liste toutes les positions permises
     allowedStates = [(x, y) for x in range(nbLignes) for y in range(nbColonnes) \
-                     if (x, y) not in wallStates or goalStates]
-
+                     if ((x, y) not in wallStates) and ((x, y) not in goalStates)]
+    print("Allowed states :",allowedStates)
     return players, nbPlayers, initStates, goalStates, nbRestaus, wallStates, allowedStates
 
 def choix_restau(nbPlayers, nbRestaus, goalStates):
@@ -151,6 +152,8 @@ def main():
         iterations = int(sys.argv[1])
     print("Iterations totales : ",iterations)
     gain = []
+    restau_alea = []
+    restau_tetue = []
 
     # Boucle principale
     for i in range(iterations):
@@ -174,10 +177,20 @@ def main():
 
         # basic choix restaturant (tetue)
         if i == 0:
-            restau = choix_restau(nbPlayers,nbRestaus,goalStates)
+            restau_tetue = choix_restau(nbPlayers,nbRestaus,goalStates)
         # choix restaurnat (alea)
         else:
-            restau = choix_restau(nbPlayers,nbRestaus,goalStates)
+            restau_alea = choix_restau(nbPlayers,nbRestaus,goalStates)
+
+        restau = [0]*nbPlayers
+        for k in range(nbPlayers):
+            if i == 0:
+                restau = restau_tetue.copy()
+            else:
+                if k < nbPlayers/2:
+                    restau[k] = restau_tetue[k]
+                else:
+                    restau[k] = restau_alea[k]
 
         for j in range(nbPlayers): # on fait bouger chaque joueur séquentiellement
             row,col = posPlayers[j]
@@ -206,7 +219,9 @@ def main():
         for k in range(nbPlayers):
             gain[k] += gain_it[k]
 
-    print("Gain total : ",gain)
+    for k in range(len(gain)):
+        gain[k] /= iterations
+    print("Gain moyen : ",gain)
     pygame.quit()
 
 if __name__ == '__main__':
