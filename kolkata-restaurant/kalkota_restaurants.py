@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Nicolas, 2020-03-20
-# Numero d'etudiant : 3872471, Junwoo Park
+# Numero d'etudiant : 3872471, Park Junwoo
 
 from __future__ import absolute_import, print_function, unicode_literals
 from gameclass import Game,check_init_game_done
@@ -16,6 +16,8 @@ import glo
 import random
 import numpy as np
 import sys
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 game = Game()
 
@@ -25,7 +27,7 @@ def init_game(_boardname=None):
     game = Game('Cartes/' + name + '.json', SpriteBuilder)
     game.O = Ontology(True, 'SpriteSheet-32x32/tiny_spritesheet_ontology.csv')
     game.populate_sprite_names(game.O)
-    game.fps = 20  # frames per second
+    game.fps = 60  # frames per second
     game.mainiteration()
     game.mask.allow_overlaping_players = True
 
@@ -101,15 +103,12 @@ class Node:
 def init_status():
     nbLignes = game.spriteBuilder.rowsize
     nbColonnes = game.spriteBuilder.colsize
-    print("lignes", nbLignes)
-    print("colonnes", nbColonnes)
 
     players = [o for o in game.layers['joueur']]
     nbPlayers = len(players)
 
     # on localise tous les états initiaux (loc du joueur)
     initStates = [o.get_rowcol() for o in game.layers['joueur']]
-    print("Init states:", initStates)
 
     # on localise tous les objets  ramassables (les restaurants)
     goalStates = [o.get_rowcol() for o in game.layers['ramassable']]
@@ -118,12 +117,10 @@ def init_status():
 
     # on localise tous les murs
     wallStates = [w.get_rowcol() for w in game.layers['obstacle']]
-    print("Wall states:",wallStates)
 
     # on liste toutes les positions permises
     allowedStates = [(x, y) for x in range(nbLignes) for y in range(nbColonnes) \
                      if ((x, y) not in wallStates) and ((x, y) not in goalStates)]
-    print("Allowed states :",allowedStates)
     return players, nbPlayers, initStates, goalStates, nbRestaus, wallStates, allowedStates
 
 def choix_restau(nbPlayers, nbRestaus, goalStates):
@@ -145,9 +142,8 @@ def get_count(players_pos):
         y.append(x[i])
     return y
 
-def main():
+def main(iterations):
     # le nombre d'iterations
-    iterations = 3
     if len(sys.argv) == 2:
         iterations = int(sys.argv[1])
     print("Iterations totales : ",iterations)
@@ -157,7 +153,7 @@ def main():
 
     # Boucle principale
     for i in range(iterations):
-        print(i,"ième itération")
+        print(i+1,"ième itération")
         init_game()
         players, nbPlayers, initStates, goalStates, nbRestaus, wallStates, allowedStates = init_status()
         posPlayers = initStates
@@ -211,7 +207,6 @@ def main():
                     game.mainiteration()
                     print("Le joueur ", j, " est à son restaurant.")
 
-        print('===',posPlayers,'---')
         temp = get_count(posPlayers)
         for k in range(len(temp)):
             gain_it[temp[k][random.randint(0,len(temp[k])-1)]] += 1
@@ -223,7 +218,35 @@ def main():
         gain[k] /= iterations
     print("Gain moyen : ",gain)
     pygame.quit()
+    """"
+    xk = list()
+    temp1 = 0
+    temp2 = 0
+    for w in range(nbPlayers):
+        if w<5:
+            temp1 += gain[w]
+        if w>=5:
+            temp2 += gain[w]
+    xk.append(temp1/5)
+    xk.append(temp2/5)
+
+    print(xk)
+    return xk
+    """
 
 if __name__ == '__main__':
-    main()
+    nb_execution = 20
+    main(nb_execution)
+
+    """
+    gain_graph = []
+    for i in range(1,nb_execution+1):
+        gain_graph.append(np.array(main(i)))
+    gain_graph = np.array(gain_graph)
+    x = np.linspace(1,nb_execution,nb_execution)
+    plt.plot(x,gain_graph)
+    plt.legend('0123456789')
+    print(gain_graph)
+    plt.show()
+    """
 
